@@ -4,8 +4,8 @@
 Sample data to use: 150 from 154 for job_events, task_constraints, task_events, task_usage
 
 # Tasks 
-1. What is the distribution of the machines according to their CPU capacity?
-Can you explain (motivate) it?
+1. What is the distribution of the machines according to their CPU capacity? Can you explain (motivate) it?
+  At timestamp "0" there are 12,477 machines initially started. The CPU capacity of the machines can be grouped into three types of capacity volumes (0.25, 0.5 and 1). 1% of the the machines use 0.25 CPUs, 6% 1.0 CPUs and 93% were using 0.5 CPUs when initally started.
 2. What is the percentage of computational power lost due to maintenance (a machine went
 offline and reconnected later)? The computational power is proportional to both the CPU capacity and the unavailabil-
 ity period of machines.
