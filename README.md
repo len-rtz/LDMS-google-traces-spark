@@ -1,7 +1,7 @@
 # LDMS-google-traces-spark
 
 # Data
-From 150 to 154
+Sample data to use: 150 from 154 for job_events, task_constraints, task_events, task_usage
 
 # Tasks 
 1. What is the distribution of the machines according to their CPU capacity?
