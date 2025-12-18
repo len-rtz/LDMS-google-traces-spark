@@ -1,5 +1,8 @@
 # LDMS-google-traces-spark
 
+# Data
+From 150 to 154
+
 # Tasks 
 1. What is the distribution of the machines according to their CPU capacity?
 Can you explain (motivate) it?
