@@ -10,15 +10,15 @@ Sample data to use: 150 from 154 for job_events, task_constraints, task_events, 
 
 **2. What is the percentage of computational power lost due to maintenance (a machine went
 offline and reconnected later)? The computational power is proportional to both the CPU capacity and the unavailabil-
-ity period of machines.**
+ity period of machines.** (Masa)
 
 **3. Is there a class of machines, according to their CPU, that stands out with a higher mainte-
-nance rate, as compared to other classes ?**
+nance rate, as compared to other classes ?** (Masa)
 
 **4. What is the distribution of the number of jobs/tasks per scheduling class? Comment on the
-results.**
+results.** (Lena)
 
-**5. Would you qualify the percentage of jobs/tasks that got killed or evicted as important?**
+**5. Would you qualify the percentage of jobs/tasks that got killed or evicted as important?** (Lena)
 
 **6. Do tasks with a low scheduling class have a higher probability of being evicted?**
 
