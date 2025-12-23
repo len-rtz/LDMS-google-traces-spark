@@ -1,0 +1,8 @@
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IPython notebook checkpoint files
+*/.ipynb_checkpoints/*
+
+# Related temporary files
+.virtual_documents/
