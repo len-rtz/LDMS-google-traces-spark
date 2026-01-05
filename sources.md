@@ -11,4 +11,5 @@ Additional Sources used for solving the tasks
 - [PySpark GroubBy Example](https://sparkbyexamples.com/pyspark/pyspark-groupby-count-explained/)
 - [PySpark GroubBy Percentage Example](https://www.statology.org/pyspark-groupby-percentage/)
 - [Pyspark Documentation SQL lit](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.lit.html)
+- [PySpark Window](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.Window.html)
 
