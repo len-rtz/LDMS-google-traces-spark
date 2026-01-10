@@ -108,6 +108,7 @@ The analysis joins the task usage table with task events to obtain resource requ
 **Result:**
 Machine resources are overcommitted approximately 0.86% of the time. Specifically CPU is overcommitted 0.59% of the time and memory is overcommitted 0.40% of the time. Both of them are overcommitted at the same time in 0.14% of the time.
 
+
 ---
 ## 11. Original Question 1: What is the distribution of priority levels within scheduling class 3, and do higher priorities within this class correlate with lower eviction/kill rates?¶
 
@@ -123,6 +124,9 @@ Surprisingly, higher priorities do not consistently correlate with lower evictio
 
 Eviction rates are more clearly correlated with priority than kill rates. Higher priorities (8, 9, 10) show near-zero eviction rates (0-3%), while lower priorities (0, 1) experience slightly higher eviction rates (14-17%). This suggests the scheduler is successfully protecting high-priority tasks from resource-based evictions. Kill rates do not follow this pattern, as kills are also triggered by factors beyond the scheduler's control (e.g. human actions).
 
+
+**Plot:**
+![Eviction and Kill Rates in Scheduling Class 3](images/task11-2.png)
 
 ---
 ## 12. Original Question 2: Are high-priority tasks evenly distributed across all machines, or are they concentrated on a few specific machines?
