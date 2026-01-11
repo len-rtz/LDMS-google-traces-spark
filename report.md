@@ -1,75 +1,56 @@
 # Analyzing Data with Spark
 Master M2 – Université Grenoble Alpes
-2025
-Lena
-Masa
+Authors: Lena & Masa
 
-This project analyzes a massive dataset provided by Google, which tracks the activity of a cluster containing 12,500 machines over a 29-day period. The goal is to use Apache Spark to process this large-scale data and understand how computing resources are managed in a real-world Cloud environment.
+This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to process this data and understand how Google manages resources in a large-scale Cloud environment.
 
 ---
 ## 1. What is the distribution of the machines according to their CPU capacity? Can you explain (motivate) it?
-* **Analysis:** We analyzed the df_machines table by looking at the distinct CPU capacities recorded at the start of the trace (timestamp 0). There were 12,477 machines active at this time. The CPU capacities are normalized, meaning they are scaled relative to the largest machine in the cluster (represented as 1.0). Our results show that the cluster is highly uniform:
-- 0.5 CPUs: 93% of machines (The vast majority)
-- 1.0 CPUs: 6% of machines
-- 0.25 CPUs: 1% of machines
-* **Motivation:** The dominance of the 0.5 CPU capacity suggests a strategy of homogeneity. Most machines are built with the same hardware to simplify cluster management.
-* **Plot:** <img src="images/cpu_distribution_pie.png" width="300">
-* **Conclusion**: The cluster is designed to be mostly uniform (homogenous). By using a "standard" 0.5 CPU machine for 93% of the cluster, Google reduces hardware complexity and makes the automated scheduling of tasks much simpler.
+**Analysis:** We analyzed the df_machines table by filtering for distinct CPU capacities at the start of the trace (timestamp 0). At this time, 12,477 machines were active. Since capacities are normalized relative to the largest machine (1.0), we grouped the data by CPU value and calculated the percentage for each class.
+
+**Result:** Our results show that the cluster is highly uniform:
+
+- <img src="images/task1-1.png" width="200">          |             <img src="images/task1.png" width="200">
+
+**Motivation/Conclusion:** One reason for the majority of CPUs being at 0.5 capacity could be that it is easier to maintain the machines if they all have a similar hardware meaning a similar CPU, e.g. to have fewer types of spare CPU in stock. Having a "standard" CPU will also reduces the complexity of scheduling jobs and tasks, as the machines are fairly homogenous and tasks can be scheduled without much computation.
+
 
 ## 2. What is the percentage of computational power lost due to maintenance (a machine went offline and reconnected later)? [4pt]The computational power is proportional to both the CPU capacity and the unavailability period of machines.
-* **Analysis:** To calculate the lost power, we looked for instances where a machine was removed and then reconnected later. Since the data does not clearly distinguish between a hardware failure and scheduled maintenance, we treated all such "offline" periods as maintenance events.
+**Analysis:** To calculate the lost power, we identified periods where machines were offline by pairing "remove" events (type 1) with their subsequent "add" events (type 0). Since the data does not clearly distinguish between a hardware failure and scheduled maintenance, we treated all such "offline" periods as maintenance events. We analyzed the df_machines table using Spark Window functions, partitioning by machine_id and ordereding by time. This allowed us to pair every "remove" event (type 1) with its corresponding "add" event (type 0) for the same physical machine. We identified the number of machine reloads (from "remove" event to "add" event) and found that our count matches the findings in the research paper "Characterizing Machines and Workloads on a Google Cluster" (page 3), which confirms our logic is correct. Then, for every machine's offline period, we multiplied the CPU capacity by the duration of the downtime, to get the lost resources. We then compared the sum of all these lost resources against the total possible power of the cluster over the 29-day period. 
 
-- Method: We used the lead() function in Spark, partitioned by machine_id and ordered by time. This allowed us to pair every "remove" event (type 1) with its corresponding "add" event (type 0) for the same physical machine.
-- Validation: We identified the number of machine reloads and found that our count matches the findings in the research paper "Characterizing Machines and Workloads on a Google Cluster" (Figure 3), which confirms our logic is correct.
-- Calculation: For every offline period, we multiplied the CPU capacity by the duration of the downtime. We then compared the sum of all these lost resources against the total possible power of the cluster over the 29-day period.
+**Result**: Across the entire cluster, the total percentage of computational power lost due to maintenance is 1.8879%. 
 
-* **Result:**  Across the entire cluster for the full 29-day period, the total percentage of computational power lost due to maintenance and failures is 0.16%.
-* **Conclusion:** A loss of only 0.16% is remarkably low. This shows that Google’s infrastructure is highly reliable and that machines are rarely offline for long. Even though thousands of machines are involved, the system manages to keep the "available" power very close to the "theoretical maximum," meaning maintenance has a very small impact on the cluster's overall performance.
+**Conclusion:** This result shows that despite the scale of 12,500 machines, Google maintains extremely high availability, losing less than 2% of its total potential processing power to hardware issues or maintenance.
 
-
-
-## TODOOOOOO
 
 ## 3. Is there a class of machines, according to their CPU, that stands out with a higher maintenance rate, as compared to other classes ?
-* **Analysis:** 
-Here, by maintenance rate, we observe how frequently machines undergo maintenance (or else: offline periods). We want to see if there is a class of machines (grouped by their CPU capacity) that experiences longer or more frequent maintenance periods compared to others.
+**Analysis:** Here, by maintenance rate, we observe how frequently machines undergo maintenance (or else: offline periods). We want to see if there is a class of machines (grouped by their CPU capacity) that experiences longer or more frequent maintenance periods compared to others. For each machine, we calculate maintenance rate as a total_offline_time per machine divided by that machine's total lifetime. We use already calculated df_reloaded table from previous task. Based on that, we calculate maintenance_rate as a sum of total offline time per machine divided by a sum of total lifetimes of all machines, per CPU group. 
 
-We calculate maintenance rate as a total_offline_time per machine divided by total_time (already calculated in previous task). We will use already calculated df_reloaded from previous task
-* **Result:** From here, we conclude that machines with lowest CPU capacity (0.25) have the highest average maintenance rate (~1.92%) <br>
-Therefore, the conclusion is that lower-CPU machines tend to have higher downtimes (maintenance and failures), which means they either undergo maintenance more frequently or for longer periods.
+**Result:** Machines with lowest CPU capacity (0.25) have the highest average maintenance rate (~3.25%). 
 
-![CPU Distribution](images/machines_distribution.png)
+<img src="images/task3.png" width="500">
+
+**Conclusion:** Lower-CPU machines tend to have higher downtimes (maintenance and failures), which means they either undergo maintenance more frequently or for longer periods.
+
 
 
 ## 4. What is the distribution of the number of jobs/tasks per scheduling class? Comment on the results.
-**Analysis:**
-By loading the job events and task events tables the counts of the number of unique jobs and tasks per scheduling class is counted by grouping on the scheduling_class field and calculating percentages based on total counts from the task events table and job events table as a comparison. 
+**Analysis:** By loading the job events and task events tables the counts of the number of unique jobs and tasks per scheduling class is counted by grouping on the scheduling_class field and calculating percentages based on total counts from the task events table and job events table as a comparison. The further analysis is based on the task events table (df_task_events), which was chosen because it provides a complete view of all 9,642 jobs in the dataset, as opposed to the job events table which only contains 8,770 jobs due to missing records from data collection issues. The results from both analyses (task and jobs on task events table) are joined into a single dataframe to compare job and task distributions across all four scheduling classes. 
 
-The further analysis is based on the task events table (df_task_events), which was chosen because it provides a complete view of all 9,642 jobs in the dataset, as opposed to the job events table which only contains 8,770 jobs due to missing records from data collection issues.
+**Result:** As the documentation points out, class 0 define non-production workloads. Those make up the most jobs (33%) and the most tasks (86%). This also suggests that non-production jobs tend to have many task per jobs. In contrast, class 1 compromises 31% of all jobs but only 10% of tasks, indicating that those are smaller jobs. Class 2 shows a similar pattern with 26% for jobs and 3% for tasks. Finally, class 3, which - according to the documentation - represent the latency sensitive production workloads make up only 1% of all jobs as well as only 1% of all tasks. The results show that higher scheduling classes tend to have fewer tasks per job, while lower classes run larger parallel workloads.
 
-The results from both analyses (task and jobs on task events table) are joined into a single dataframe to compare job and task distributions across all four scheduling classes. 
+<img src="images/task4.png" width="800">
 
-**Result:** As the documentation points out, class 0 define non-production workloads. Those make up the most jobs (33%) and the most tasks (86%). This also suggests that non-production jobs tend to have many task per jobs. In contrast, class 1 compromises 31% of all jobs but only 10% of tasks, indicating that those are smaller jobs. Class 2 shows a similar pattern with 26% for jobs and 3% for tasks. Finally, class 3, which - according to the documentation - represent the latency sensitive production workloads make up only 1% of all jobs as well as only 1% of all tasks.
-
-The results show that higher scheduling classes tend to have fewer tasks per job, while lower classes run larger parallel workloads.
-
-**Plot:**
-![Scheduling Class Plot](images/task4.png)
 
 
 ## 5. Would you qualify the percentage of jobs/tasks that got killed or evicted as important?
-**Analysis:**
-The analysis filters the task events table for kill (event_type = 5) and eviction (event_type = 2) events, then counts the number of distinct jobs and tasks that experienced these events at least once by selecting unique combinations of job_id and task_index. Percentages are calculated by dividing these counts by the total number of jobs and tasks from the previous analysis (task 4), with separate calculations for kills and evictions to understand the breakdown. 
+**Analysis:** The analysis filters the task events table for kill (event_type = 5) and eviction (event_type = 2) events, then counts the number of distinct jobs and tasks that experienced these events at least once by selecting unique combinations of job_id and task_index. Percentages are calculated by dividing these counts by the total number of jobs and tasks from the previous analysis (task 4), with separate calculations for kills and evictions to understand the breakdown. 
 
 **Result:** 
-Out of all jobs 51% of them were killed or evicted, within these jobs 43% of all tasks were killed or evicted at least once.
+Out of all jobs, 51% of them were killed or evicted, within these jobs 43% of all tasks were killed or evicted at least once. Especially because of these high numbers, the percentage of evictions and kills is highly important. Nearly half of all jobs and tasks experience termination. This is a substantial portion of the workload that doesn't complete successfully on the first attempt and can reflect system reliability indicators. The high numbers might reflect the scheduling strategy from Google, as the documentation notes: "it can happen that there are not enough resources to meet all the runtime requests from the tasks, even though each of them is using less than its limit. If this happens, one or more low priority task(s) may be killed." The high number of evictions (83,227 task evictions) demonstrates that lower-priority tasks, which also make up 36% of all jobs and 86% of all tasks, may act as a "buffer" for cluster capacity, being evicted when resources are needed for higher-priority tasks.
 
-Especially because of these high numbers, the percentage of evictions and kills is highly important. Nearly half of all jobs and tasks experience termination. This is a substantial portion of the workload that doesn't complete successfully on the first attempt and can reflect system reliability indicators.
+<img src="images/task5.png" width="800">
 
-The high numbers might reflect the scheduling strategy from Google, as the documentation notes: "it can happen that there are not enough resources to meet all the runtime requests from the tasks, even though each of them is using less than its limit. If this happens, one or more low priority task(s) may be killed." The high number of evictions (83,227 task evictions) demonstrates that lower-priority tasks, which also make up 36% of all jobs and 86% of all tasks, may act as a "buffer" for cluster capacity, being evicted when resources are needed for higher-priority tasks.
-
-**Plot:**
-![Percentage of Jobs and Tasks Killed or Evicted](images/task5.png)
 
 ## 6. Do tasks with a low scheduling class have a higher probability of being evicted?
 **Analysis:**
@@ -78,13 +59,10 @@ By filtering the task events table for eviction events (event_type = 2), selecti
 **Result:**
 The analysis of 83,227 task evictions show that tasks with a lower scheduling class are evicted more often than tasks with a higher scheduling class. Tasks from class 0 (non-production) make up 75% of all evictions, class 1 21%, class 2 4% and class 3 (most latency-sensitive tasks) only 1%.
 
-As the documentation explicitly states "The cluster scheduler attempts to prevent latency-sensitive tasks at these priorities from being evicted due to over-allocation of machine resources."
-
+As the documentation explicitly states "The cluster scheduler attempts to prevent latency-sensitive tasks at these priorities from being evicted due to over-allocation of machine resources"
 This explains why class 0 tasks get evicted the most and why higher scheduling classes have some protection against eviction. The documentation states that EVICT events occur due to: "a higher priority task or job, because the scheduler overcommitted and the actual demand exceeded the machine capacity, because the machine on which it was running became unusable (e.g. taken offline for repairs), or because a disk holding the task's data was lost."
 
-As already assumed in question 5, non-production workloads serve as a resource buffer and get sacrificed to enable the cluster to maintain responsiveness for production workloads.
-
-While Class 0 and 1 dominate evictions by volume, Classes 3-4 still experience eviction rates of 1% to 4%. This indicates that even higher scheduling classes can be evicted under certain conditions (machine failures, extreme resource pressure).
+As already assumed in question 5, non-production workloads serve as a resource buffer and get sacrificed to enable the cluster to maintain responsiveness for production workloads. While Class 0 and 1 dominate evictions by volume, Classes 3-4 still experience eviction rates of 1% to 4%. This indicates that even higher scheduling classes can be evicted under certain conditions (machine failures, extreme resource pressure).
 
 ## 7. In general, do tasks from the same job run on the same machine? Comment on the observed locality strategy and its pros and cons.
 **Analysis:**
@@ -96,10 +74,22 @@ Tasks from the same job generally do not run on the same machine. Google employs
 One advantage of this high distribution scheduling system is, that a potential machine failure affects only one task per job for the majority of jobs. Scalability gets a lot easier with this scheduling as well, as no job is limited by any single machine's capacity. Distributing tasks across machines also prevents a single machine from becoming overloaded while others remain underutilized. One disadvantage is the high complexity and the communication and coordination demand for the scheduler.
 
 ## 8. Are the tasks that request the more resources the one that consume the more resources?
-* **Finding:** [Do tasks use as much as they ask for?]
+**Analysis:** We analyze task usage table and task events table, in order to compare required resources for each task (required cpu, ram, local disk from task events table) and the mean resources used (mean cpu usage, memory usage, local disk usage from task usage table). First, we normlaize the columns from task usage table that are not normalized, and are relevant for our analysis. Then, for each specific task and job, we calculate average mean resources, across different timeframes. Now, in order to calculate actual efficiency of used resources, we decide to calculate usage_efficiency as:  $$usage\_efficiency = \frac{actual\_usage}{requested\_amount}$$. And we calculate usage_efficiency for each of three different resources separately (cpus, ram, local disk), but also, we calculate one combined efficiency factor as an average of those 3 efficiencies: $$total\_efficiency = \frac{cpu\_efficiency + ram\_efficiency+disk\_efficiency}{3}$$. Now, for all these 4 factors (cpu_efficiency, ram_efficiency, disk_efficiency and total_efficiency), we want to see if there is any correlation between the efficiencies and their corresponding request for resource. So, we calculate correlation between cpu_efficiency and requested cpu, ram_efficiency and requested ram, etc.
+We get very low correlation values for all four, meaning that there is no linear correlation. If there was correlation, that would mean that, as the request grows, the actual efficiency of resources used grows as well (in a linear manner). Since that is not a case, we decide to plot these, and see how efficiency changes with the increas of requested resources. 
+
+**Result:** From the plots provided, we can see that the efficiency of resources requested is the highest when the requested resources are low, and the efficiency drops toward zero as the requested amount of resources grows. That means that tasks asking for the most resources are actually the most wasteful, as they rarely use the high amounts they were assigned.
+
+<img src="images/task8-1.png" width="400"> | <img src="images/task8-2.png" width="400"> |  <img src="images/task8-3.png" width="400"> | <img src="images/task8-4.png" width="400">
+
 
 ## 9. Can we observe correlations between peaks of high resource consumption on some machines and task eviction events?
-* **Correlation:** [Do evictions happen when machines are full?]
+**Analysis:** We analyzed the task events and usage peaks to see if resource spikes cause evictions. First, we filtered the task events to identify only evictions (event type 2) and grouped them into 5-minute windows to count how many occurred per machine in each timeframe. We performed the same 5-minute window grouping on the task usage table to find the peaks of CPU and memory consumption. Finally, we joined these two tables by machine and window, allowing us to calculate the correlation between high resource peaks and the eviction count.
+
+**Result:**  We get that there is almost no correlation between resource peaks and evictions, with values around -0.025 for CPU and -0.028 for RAM. That means that resource peaks are not the main reason for evictions. The scatter plots confirm this, as eviction events are spread out regardless of whether resource usage is low or high. This means that tasks aren't being kicked off just because a machine is "full" in a 5-minute window, but evictions are likely triggered by other factors, like higher-priority jobs arriving or specific scheduling policies. Also, visually, it looks like more evictions happen when usage is low, but this is simply because the vast majority of tasks in the cluster have low resource peaks. Because there are so many more "small" tasks, they naturally account for more of the eviction events.
+
+<img src="images/task9-1.png" width="600"> | <img src="images/task9-2.png" width="600">
+
+
 
 ## 10. How often does it happen that the resources of a machine are over-committed2?
 **Analysis:**
@@ -124,32 +114,37 @@ Surprisingly, higher priorities do not consistently correlate with lower evictio
 
 Eviction rates are more clearly correlated with priority than kill rates. Higher priorities (8, 9, 10) show near-zero eviction rates (0-3%), while lower priorities (0, 1) experience slightly higher eviction rates (14-17%). This suggests the scheduler is successfully protecting high-priority tasks from resource-based evictions. Kill rates do not follow this pattern, as kills are also triggered by factors beyond the scheduler's control (e.g. human actions).
 
-
-**Plot:**
-![Eviction and Kill Rates in Scheduling Class 3](images/task11-2.png)
+<img src="images/task11-2.png" width="800">
 
 ---
 ## 12. Original Question 2: Are high-priority tasks evenly distributed across all machines, or are they concentrated on a few specific machines?
 
-**Question:** Are high-priority tasks evenly spread across all machines, or are they concentrated on a few specific machines?
+**Analysis:** We analyzed task events table by filtering high-priority tasks (Priority 8+) , and observing how they are distributed across the cluster by counting the number of tasks executed per machine.
 
-**Motivation:**
-This question explores how the cluster handles risk. If important tasks are "packed" on a few machines, one hardware failure could be very dangerous.
 
 **Results:**
-Our analysis shows a **"long-tail" distribution**. A small group of machines handles almost all high-priority work (around 12,000 tasks each), while thousands of others handle nearly zero. We used a **log scale** for the plot to make the quiet machines visible.
+Our data shows that important tasks are packed together. A very small group of machines handles almost all the important work (about 12,000 tasks each). Meanwhile, thousands of other machines handle almost zero important tasks. We used log scale for visualization, because otherwise, the machines with only a few tasks would look like zero on the graph.
+
+What this means for the cluster
+- Grouping (Packing): Google’s system likes to put important tasks together. They probably pick their best and most reliable machines for this work.
+- Efficiency: Keeping these tasks close together makes them run faster and saves space on other machines for different types of work.
+- Risk: This is a bit risky. Since so many important tasks are on the same few machines, if one of those machines breaks, a lot of important work stops at the same time.
+
+<img src="images/task12.png" width="800">
+
+
+
 
 **Conclusion:**
 Google uses a **packing strategy**. They likely group important tasks on their most reliable hardware to improve efficiency, even if it increases the risk of "hotspots."
 
-**Plot:** ![High Priority Dist](path/to/tasks_per_machine.png)
+------------------------
 
------
 
-**Results:**
-[Insert your Spark results here]
 
-**Conclusion:**
+
+
+**Overall Conclusion:**
 [Insert your conclusion here]
 
 # Sources
