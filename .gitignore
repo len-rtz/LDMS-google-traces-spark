@@ -6,3 +6,5 @@
 
 # Related temporary files
 .virtual_documents/
+
+.DS_Store
