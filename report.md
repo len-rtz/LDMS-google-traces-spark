@@ -15,7 +15,7 @@ This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to 
 **Motivation/Conclusion:** One reason for the majority of CPUs being at 0.5 capacity could be that it is easier to maintain the machines if they all have a similar hardware meaning a similar CPU, e.g. to have fewer types of spare CPU in stock. Having a "standard" CPU will also reduces the complexity of scheduling jobs and tasks, as the machines are fairly homogenous and tasks can be scheduled without much computation.
 
 
-## 2. What is the percentage of computational power lost due to maintenance (a machine went offline and reconnected later)? [4pt]The computational power is proportional to both the CPU capacity and the unavailability period of machines.
+## 2. What is the percentage of computational power lost due to maintenance (a machine went offline and reconnected later)? The computational power is proportional to both the CPU capacity and the unavailability period of machines.
 **Analysis:** To calculate the lost power, we identified periods where machines were offline by pairing "remove" events (type 1) with their subsequent "add" events (type 0). Since the data does not clearly distinguish between a hardware failure and scheduled maintenance, we treated all such "offline" periods as maintenance events. We analyzed the df_machines table using Spark Window functions, partitioning by machine_id and ordereding by time. This allowed us to pair every "remove" event (type 1) with its corresponding "add" event (type 0) for the same physical machine. We identified the number of machine reloads (from "remove" event to "add" event) and found that our count matches the findings in the research paper "Characterizing Machines and Workloads on a Google Cluster" (page 3), which confirms our logic is correct. Then, for every machine's offline period, we multiplied the CPU capacity by the duration of the downtime, to get the lost resources. We then compared the sum of all these lost resources against the total possible power of the cluster over the 29-day period. 
 
 **Result**: Across the entire cluster, the total percentage of computational power lost due to maintenance is 1.8879%. 
@@ -96,7 +96,7 @@ We get very low correlation values for all four, meaning that there is no linear
 The analysis joins the task usage table with task events to obtain resource requests (CPU and RAM), then groups by measurement period and machine to sum total requested resources, and joins this with machine capacity data to get the most recent capacity for each machine at each time period using a window function. For each machine-period combination, it flags CPU and memory over-commitment by comparing total requested resources against machine capacity, creating binary indicators when requests exceed capacity. Finally, it counts the total number of measurements and the frequency of CPU over-commitment, memory over-commitment, both simultaneously, and any over-commitment, calculating percentages to quantify how often over-commitment occurs in the cluster.
 
 **Result:**
-Machine resources are overcommitted approximately 0.86% of the time. Specifically CPU is overcommitted 0.59% of the time and memory is overcommitted 0.40% of the time. Both of them are overcommitted at the same time in 0.14% of the time.
+Machine resources are overcommitted approximately 9.68% of the time. Specifically CPU is overcommitted 7.94% of the time and memory is overcommitted 8.43% of the time. Both of them are overcommitted at the same time in 6.69% of the time.
 
 
 ---
@@ -133,14 +133,10 @@ What this means for the cluster
 <img src="images/task12.png" width="800">
 
 
-
-
 **Conclusion:**
 Google uses a **packing strategy**. They likely group important tasks on their most reliable hardware to improve efficiency, even if it increases the risk of "hotspots."
 
 ------------------------
-
-
 
 
 
@@ -150,12 +146,12 @@ Google uses a **packing strategy**. They likely group important tasks on their m
 # Sources
 Additional Sources used for solving the tasks
 
-## General Understanding of the Data
+## Dataset related
+- [Bashir, N., Deng, N., Rzadca, K., Irwin, D., Kodak, S., & Jnagal, R. (2021, April). Take it to the limit: peak prediction-driven resource overcommitment in datacenters. In Proceedings of the Sixteenth European Conference on Computer Systems (pp. 556-573).](https://research.google/pubs/take-it-to-the-limit-peak-prediction-driven-resource-overcommitment-in-datacenters/) 
 - [Chen, X., Lu, C. D., & Pattabiraman, K. (2014, November). Failure analysis of jobs in compute clouds: A google cluster case study. In 2014 IEEE 25th International Symposium on Software Reliability Engineering (pp. 167-177). IEEE.](https://blogs.ubc.ca/karthik/files/2014/09/ISSRE2014.pdf) 
 - [Liu, Z., & Cho, S. (2012, September). Characterizing machines and workloads on a Google cluster. In 2012 41st International Conference on Parallel Processing Workshops (pp. 397-403). IEEE.](https://www.xcg.cs.pitt.edu/papers/liu-srmpds12.pdf)
 
-
-## For Solving the Tasks
+## Spark Related
 - [PySpark Where Filter Example](https://sparkbyexamples.com/pyspark/pyspark-where-filter/)
 - [PySpark GroubBy Example](https://sparkbyexamples.com/pyspark/pyspark-groupby-count-explained/)
 - [PySpark GroubBy Percentage Example](https://www.statology.org/pyspark-groupby-percentage/)
