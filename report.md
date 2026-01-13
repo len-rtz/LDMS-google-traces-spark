@@ -138,10 +138,14 @@ Google uses a **packing strategy**. They likely group important tasks on their m
 
 ------------------------
 
+# Extending the Work: Studying Other Datasets
+The [Alibaba cluster trace from 2017](https://github.com/alibaba/clusterdata/tree/master/cluster-trace-v2017) provides information about a datacenter over a 24-hour period, capturing both batch jobs and online services across 1,313 machines. 
+
+Each machine’s capacity is recorded in terms of CPU cores, memory, and disk, and utilization is measured every minute and averaged over 5 minutes, capturing actual resource usage including operating system overhead. The trace also includes task-level information for batch workloads, such as start and end times, requested resources, and machine assignments, as well as events for online service instances. 
 
 
-**Overall Conclusion:**
-[Insert your conclusion here]
+The CPU capacity distribution (question 1) of the servers in this dataset is extremely simple and homogeneous as all machines start with 64-core CPUs, and there are no other CPU sizes at cluster initialization, although 7 machines show more than one CPU value over time. Analysis of task placement (question 7) shows that Alibaba strongly favors anti-locality as almost all multi-task jobs are over-distributed, with 96% of jobs having their tasks spread across more machines than tasks, only 3% perfectly distributed (one task per machine), and just 1% showing multiple tasks colocated on the same machine. This contrasts sharply with the Google cluster, where the dominant pattern was fully distributed jobs (74% of multi-task jobs with one task per machine). Machine over-commitment analysis (question 10) reveals that the cluster operates at extremely high utilization because 99.67% of measurements exceed CPU capacity, all exceed memory capacity, and nearly all measurements exceed at least one resource, with both CPU and memory simultaneously overcommitted in 99.67% of cases. This reflects an intense resource allocation strategy. In comparison, the Google cluster shows a management approach with minimal contention. Overall, the Alibaba trace highlights the cluster’s high efficiency and aggressive anti-locality scheduling, providing a stark contrast to Google’s more locality-aware approach to resource management.
+
 
 # Sources
 Additional Sources used for solving the tasks
