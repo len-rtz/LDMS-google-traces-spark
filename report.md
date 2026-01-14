@@ -1,16 +1,19 @@
 # Analyzing Data with Spark
-Master M2 – Université Grenoble Alpes
-Authors: Lena & Masa
+**M2 Artificial Intelligence | Université Grenoble Alpes**
 
-This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to process this data and understand how Google manages resources in a large-scale Cloud environment.
+**Authors:** Lena Pickartz & Masa Cucic  <br>
+**Course:**  Large Scale Data Management <br>
+**Date:** January 2026 <br>
+
+This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to process this data and understand how Google manages resources in a large-scale Cloud environment. For this analysis, we chose to work with Spark DataFrames.
 
 ---
 ## 1. What is the distribution of the machines according to their CPU capacity? Can you explain (motivate) it?
 **Analysis:** We analyzed the df_machines table by filtering for distinct CPU capacities at the start of the trace (timestamp 0). At this time, 12,477 machines were active. Since capacities are normalized relative to the largest machine (1.0), we grouped the data by CPU value and calculated the percentage for each class.
 
-**Result:** Our results show that the cluster is highly uniform:
+**Result:** Our results show that the cluster is very uniform. Most machines (93%) are standardized at a 0.5 CPU capacity. The rest of the cluster consists of small groups with 1.0 CPU (6%) and 0.25 CPU (1%).
 
-- <img src="images/task1-1.png" width="200">          |             <img src="images/task1.png" width="200">
+- <img src="images/task1-1.png" width="300">          |             <img src="images/task1.png" width="500">
 
 **Motivation/Conclusion:** One reason for the majority of CPUs being at 0.5 capacity could be that it is easier to maintain the machines if they all have a similar hardware meaning a similar CPU, e.g. to have fewer types of spare CPU in stock. Having a "standard" CPU will also reduces the complexity of scheduling jobs and tasks, as the machines are fairly homogenous and tasks can be scheduled without much computation.
 
@@ -20,7 +23,7 @@ This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to 
 
 **Result**: Across the entire cluster, the total percentage of computational power lost due to maintenance is 1.8879%. 
 
-**Conclusion:** This result shows that despite the scale of 12,500 machines, Google maintains extremely high availability, losing less than 2% of its total potential processing power to hardware issues or maintenance.
+**Conclusion:** This result shows that less than 2% of total potential processing power os lost due to maintenance. This is very good having in mind there are 12500 machines in the cluster. 
 
 
 ## 3. Is there a class of machines, according to their CPU, that stands out with a higher maintenance rate, as compared to other classes ?
@@ -74,12 +77,12 @@ Tasks from the same job generally do not run on the same machine. Google employs
 One advantage of this high distribution scheduling system is, that a potential machine failure affects only one task per job for the majority of jobs. Scalability gets a lot easier with this scheduling as well, as no job is limited by any single machine's capacity. Distributing tasks across machines also prevents a single machine from becoming overloaded while others remain underutilized. One disadvantage is the high complexity and the communication and coordination demand for the scheduler.
 
 ## 8. Are the tasks that request the more resources the one that consume the more resources?
-**Analysis:** We analyze task usage table and task events table, in order to compare required resources for each task (required cpu, ram, local disk from task events table) and the mean resources used (mean cpu usage, memory usage, local disk usage from task usage table). First, we normlaize the columns from task usage table that are not normalized, and are relevant for our analysis. Then, for each specific task and job, we calculate average mean resources, across different timeframes. Now, in order to calculate actual efficiency of used resources, we decide to calculate usage_efficiency as:  $$usage\_efficiency = \frac{actual\_usage}{requested\_amount}$$. And we calculate usage_efficiency for each of three different resources separately (cpus, ram, local disk), but also, we calculate one combined efficiency factor as an average of those 3 efficiencies: $$total\_efficiency = \frac{cpu\_efficiency + ram\_efficiency+disk\_efficiency}{3}$$. Now, for all these 4 factors (cpu_efficiency, ram_efficiency, disk_efficiency and total_efficiency), we want to see if there is any correlation between the efficiencies and their corresponding request for resource. So, we calculate correlation between cpu_efficiency and requested cpu, ram_efficiency and requested ram, etc.
-We get very low correlation values for all four, meaning that there is no linear correlation. If there was correlation, that would mean that, as the request grows, the actual efficiency of resources used grows as well (in a linear manner). Since that is not a case, we decide to plot these, and see how efficiency changes with the increas of requested resources. 
+**Analysis:** We analyze task usage table and task events table, in order to compare required resources for each task (required cpu, ram, local disk from task events table) and the mean resources used (mean cpu usage, memory usage, local disk usage from task usage table). First, we normlaize the columns from task usage table that are not normalized, and are relevant for our analysis. Then, for each specific task and job, we calculate average mean resources, across different timeframes. Now, in order to calculate actual efficiency of used resources, we decide to calculate usage_efficiency as:  $$usage\_efficiency = \frac{actual\_usage}{requested\_amount}$$  And we calculate usage_efficiency for each of three different resources separately (cpus, ram, local disk).  Now, for all these 3 factors (cpu_efficiency, ram_efficiency and disk_efficiency), we want to see if there is any correlation between the efficiencies and their corresponding request for resource. So, we calculate correlation between cpu_efficiency and requested cpu, ram_efficiency and requested ram, disk efficiency and requested disk.
+For all of them, we get correlation values close to zero, meaning that there is no linear correlation. However, the correlation coefficient might have missed some other types of relationships, so we plot these variables to check potential non-linear trends between eficiencies and requests.
 
-**Result:** From the plots provided, we can see that the efficiency of resources requested is the highest when the requested resources are low, and the efficiency drops toward zero as the requested amount of resources grows. That means that tasks asking for the most resources are actually the most wasteful, as they rarely use the high amounts they were assigned.
+**Result:** From the plots provided, we observe that the efficiency of resources requested is the highest when the requested resources are low, and the efficiency drops as the requested amount of resources grows. That means that tasks asking for the most resources are actually the most wasteful, as they rarely use the high amounts they were assigned.
 
-<img src="images/task8-1.png" width="400"> | <img src="images/task8-2.png" width="400"> |  <img src="images/task8-3.png" width="400"> | <img src="images/task8-4.png" width="400">
+<img src="images/task8-1.png" width="480"> | <img src="images/task8-2.png" width="490"> |  <img src="images/task8-3.png" width="500"> 
 
 
 ## 9. Can we observe correlations between peaks of high resource consumption on some machines and task eviction events?
