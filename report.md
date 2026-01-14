@@ -150,6 +150,17 @@ Each machine’s capacity is recorded in terms of CPU cores, memory, and disk, a
 The CPU capacity distribution (question 1) of the servers in this dataset is extremely simple and homogeneous as all machines start with 64-core CPUs, and there are no other CPU sizes at cluster initialization, although 7 machines show more than one CPU value over time. Analysis of task placement (question 7) shows that Alibaba strongly favors anti-locality as almost all multi-task jobs are over-distributed, with 96% of jobs having their tasks spread across more machines than tasks, only 3% perfectly distributed (one task per machine), and just 1% showing multiple tasks colocated on the same machine. This contrasts sharply with the Google cluster, where the dominant pattern was fully distributed jobs (74% of multi-task jobs with one task per machine). Machine over-commitment analysis (question 10) reveals that the cluster operates at extremely high utilization because 99.67% of measurements exceed CPU capacity, all exceed memory capacity, and nearly all measurements exceed at least one resource, with both CPU and memory simultaneously overcommitted in 99.67% of cases. This reflects an intense resource allocation strategy. In comparison, the Google cluster shows a management approach with minimal contention. Overall, the Alibaba trace highlights the cluster’s high efficiency and aggressive anti-locality scheduling, providing a stark contrast to Google’s more locality-aware approach to resource management.
 
 
+
+### 4. Machine Reliability & Failure Analysis
+In this part, we analyzed the frequency and impact of 'softerror' events from server event dataframe. Our observations show that 'add' events occur only at the start of the trace. Moreover, a single machine may have multiple 'softerror' events, but the first occurrence indicates the machine is functionally dead. At that moment, its resource counts drop to zero, and no subsequent 'add' events are recorded to bring the machine back.
+
+Main observation in this part is that out of 1313 machines in total, only 7 experienced errors. This demonstrates that the system's hardware reliability is very high, with a machine error probability of just 0.53%.
+
+### 5. What is the percentage of computational power lost due to errors?
+To measure the impact of the failures observed in the previous task, we compared the total power lost by the 7 failing machines against the total potential power of all 1,313 machines in the cluster. The total potential power represents the sum of every machine's CPU capacity over its full lifetime, while the lost power accounts for the product of the CPU count and the total time the machine spent offline—from the moment the first 'softerror' occurred until the trace ended. Our analysis shows that the total computational power lost is only 0.3386%, meaning these rare errors do not have a significant effect on the overall capacity of the system. Compared to the Google trace, which showed a total power loss of 1.8879%, Alibaba's much lower percentage of power lost suggests that its physical machines are less prone to the critical failures that permanently remove capacity from the cluster.
+
+
+
 # Sources
 Additional Sources used for solving the tasks
 
