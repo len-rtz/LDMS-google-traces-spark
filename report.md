@@ -3,7 +3,7 @@
 
 **Authors:** Lena Pickartz & Masa Cucic  <br>
 **Course:**  Large Scale Data Management <br>
-**Date:** January 2026 <br>
+**Date:** 15.01.2026 <br>
 
 This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to process this data and understand how Google manages resources in a large-scale Cloud environment. For this analysis, we chose to work with Spark DataFrames.
 
@@ -13,7 +13,7 @@ This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to 
 
 **Result:** Our results show that the cluster is very uniform. Most machines (93%) are standardized at a 0.5 CPU capacity. The rest of the cluster consists of small groups with 1.0 CPU (6%) and 0.25 CPU (1%).
 
-- <img src="images/task1-1.png" width="300">          |             <img src="images/task1.png" width="500">
+<img src="images/task1-1.png" width="300">          |             <img src="images/task1.png" width="500">
 
 **Motivation/Conclusion:** One reason for the majority of CPUs being at 0.5 capacity could be that it is easier to maintain the machines if they all have a similar hardware meaning a similar CPU, e.g. to have fewer types of spare CPU in stock. Having a "standard" CPU will also reduces the complexity of scheduling jobs and tasks, as the machines are fairly homogenous and tasks can be scheduled without much computation.
 
@@ -43,7 +43,6 @@ This report analyzes a 29-day trace of 12,500 machines. We used Apache Spark to 
 **Result:** As the documentation points out, class 0 define non-production workloads. Those make up the most jobs (33%) and the most tasks (86%). This also suggests that non-production jobs tend to have many task per jobs. In contrast, class 1 compromises 31% of all jobs but only 10% of tasks, indicating that those are smaller jobs. Class 2 shows a similar pattern with 26% for jobs and 3% for tasks. Finally, class 3, which - according to the documentation - represent the latency sensitive production workloads make up only 1% of all jobs as well as only 1% of all tasks. The results show that higher scheduling classes tend to have fewer tasks per job, while lower classes run larger parallel workloads.
 
 <img src="images/task4.png" width="800">
-
 
 
 ## 5. Would you qualify the percentage of jobs/tasks that got killed or evicted as important?
@@ -93,8 +92,7 @@ For all of them, we get correlation values close to zero, meaning that there is 
 <img src="images/task9-1.png" width="600"> | <img src="images/task9-2.png" width="600">
 
 
-
-## 10. How often does it happen that the resources of a machine are over-committed2?
+## 10. How often does it happen that the resources of a machine are over-committed?
 **Analysis:**
 The analysis joins the task usage table with task events to obtain resource requests (CPU and RAM), then groups by measurement period and machine to sum total requested resources, and joins this with machine capacity data to get the most recent capacity for each machine at each time period using a window function. For each machine-period combination, it flags CPU and memory over-commitment by comparing total requested resources against machine capacity, creating binary indicators when requests exceed capacity. Finally, it counts the total number of measurements and the frequency of CPU over-commitment, memory over-commitment, both simultaneously, and any over-commitment, calculating percentages to quantify how often over-commitment occurs in the cluster.
 
@@ -103,13 +101,14 @@ Machine resources are overcommitted approximately 9.68% of the time. Specificall
 
 
 ---
-## 11. Original Question 1: What is the distribution of priority levels within scheduling class 3, and do higher priorities within this class correlate with lower eviction/kill rates?¶
+## 11. Original Question 1: What is the distribution of priority levels within scheduling class 3, and do higher priorities within this class correlate with lower eviction/kill rates?
 
 **Motivation:**
 While scheduling class classifys the tasks/jobs into e.g. production vs. non-production tasks/jobs, priority levels within the same class should theoretically influence resource allocation decisions and protection from disruption within these classes. By examining whether higher priorities correlate with lower eviction and kill rates specifically within Class 3, we can verify if the scheduler's priority mechanism effectively protects the critical production tasks.
 
 **Analysis:**
 The analysis first looks the overall priority distribution across all scheduling classes by grouping task events by both scheduling class and priority, creating a stacked bar chart to visualize how priorities are distributed, then filters specifically for scheduling class 3 to examine its priority composition. For each priority level in Class 3, it calculates total events, evictions, and kills, then computes eviction and kill rates as percentages to assess whether higher priorities experience lower disruption. 
+
 **Result:**
 In scheduling class 3 (latency-sensitive production tasks) priority 1 tasks dominate with 44%, followed by priority 9 at 30% and priority 0 at 14%. Priority 8 makes up 10%, while priorities 2 and 10 are minimal at 0.2% and 0.4%. This suggests that within the most latency-sensitive scheduling class, tasks still operate at varying priority levels, though most tasks (75%) are labelled priority 1 or 9.
 
@@ -125,7 +124,7 @@ Eviction rates are more clearly correlated with priority than kill rates. Higher
 **Analysis:** We analyzed task events table by filtering high-priority tasks (Priority 8+) , and observing how they are distributed across the cluster by counting the number of tasks executed per machine.
 
 
-**Results:**
+**Result:**
 Our data shows that important tasks are packed together. A very small group of machines handles almost all the important work (about 12,000 tasks each). Meanwhile, thousands of other machines handle almost zero important tasks. We used log scale for visualization, because otherwise, the machines with only a few tasks would look like zero on the graph.
 
 What this means for the cluster
@@ -146,19 +145,17 @@ The [Alibaba cluster trace from 2017](https://github.com/alibaba/clusterdata/tre
 
 Each machine’s capacity is recorded in terms of CPU cores, memory, and disk, and utilization is measured every minute and averaged over 5 minutes, capturing actual resource usage including operating system overhead. The trace also includes task-level information for batch workloads, such as start and end times, requested resources, and machine assignments, as well as events for online service instances. 
 
+The CPU capacity distribution (question 1) of the servers in this dataset is extremely simple and homogeneous as all machines start with 64-core CPUs, and there are no other CPU sizes at cluster initialization, although 7 machines show more than one CPU value over time. 
 
-The CPU capacity distribution (question 1) of the servers in this dataset is extremely simple and homogeneous as all machines start with 64-core CPUs, and there are no other CPU sizes at cluster initialization, although 7 machines show more than one CPU value over time. Analysis of task placement (question 7) shows that Alibaba strongly favors anti-locality as almost all multi-task jobs are over-distributed, with 96% of jobs having their tasks spread across more machines than tasks, only 3% perfectly distributed (one task per machine), and just 1% showing multiple tasks colocated on the same machine. This contrasts sharply with the Google cluster, where the dominant pattern was fully distributed jobs (74% of multi-task jobs with one task per machine). Machine over-commitment analysis (question 10) reveals that the cluster operates at extremely high utilization because 99.67% of measurements exceed CPU capacity, all exceed memory capacity, and nearly all measurements exceed at least one resource, with both CPU and memory simultaneously overcommitted in 99.67% of cases. This reflects an intense resource allocation strategy. In comparison, the Google cluster shows a management approach with minimal contention. Overall, the Alibaba trace highlights the cluster’s high efficiency and aggressive anti-locality scheduling, providing a stark contrast to Google’s more locality-aware approach to resource management.
+For machine reliability and failure analysis (question 4), we analyzed the frequency and impact of 'softerror' events from server event dataframe. Our observations show that 'add' events occur only at the start of the trace. Moreover, a single machine may have multiple 'softerror' events, but the first occurrence indicates the machine is functionally dead. At that moment, its resource counts drop to zero, and no subsequent 'add' events are recorded to bring the machine back. Main observation in this part is that out of 1313 machines in total, only 7 experienced errors. This demonstrates that the system's hardware reliability is very high, with a machine error probability of just 0.53%.
 
+To measure the impact of the failures (question 5) observed in the previous task, we compared the total power lost by the 7 failing machines against the total potential power of all 1,313 machines in the cluster. The total potential power represents the sum of every machine's CPU capacity over its full lifetime, while the lost power accounts for the product of the CPU count and the total time the machine spent offline—from the moment the first 'softerror' occurred until the trace ended. Our analysis shows that the total computational power lost is only 0.3386%, meaning these rare errors do not have a significant effect on the overall capacity of the system. Compared to the Google trace, which showed a total power loss of 1.8879%, Alibaba's much lower percentage of power lost suggests that its physical machines are less prone to the critical failures that permanently remove capacity from the cluster.
 
+Analysis of task placement (question 7) shows that Alibaba strongly favors anti-locality as almost all multi-task jobs are over-distributed, with 96% of jobs having their tasks spread across more machines than tasks, only 3% perfectly distributed (one task per machine), and just 1% showing multiple tasks colocated on the same machine. This contrasts sharply with the Google cluster, where the dominant pattern was fully distributed jobs (74% of multi-task jobs with one task per machine). 
 
-### 4. Machine Reliability & Failure Analysis
-In this part, we analyzed the frequency and impact of 'softerror' events from server event dataframe. Our observations show that 'add' events occur only at the start of the trace. Moreover, a single machine may have multiple 'softerror' events, but the first occurrence indicates the machine is functionally dead. At that moment, its resource counts drop to zero, and no subsequent 'add' events are recorded to bring the machine back.
+Machine over-commitment analysis (question 10) reveals that the cluster operates at extremely high utilization because 99.67% of measurements exceed CPU capacity, all exceed memory capacity, and nearly all measurements exceed at least one resource, with both CPU and memory simultaneously overcommitted in 99.67% of cases. This reflects an intense resource allocation strategy. In comparison, the Google cluster shows a management approach with minimal contention. 
 
-Main observation in this part is that out of 1313 machines in total, only 7 experienced errors. This demonstrates that the system's hardware reliability is very high, with a machine error probability of just 0.53%.
-
-### 5. What is the percentage of computational power lost due to errors?
-To measure the impact of the failures observed in the previous task, we compared the total power lost by the 7 failing machines against the total potential power of all 1,313 machines in the cluster. The total potential power represents the sum of every machine's CPU capacity over its full lifetime, while the lost power accounts for the product of the CPU count and the total time the machine spent offline—from the moment the first 'softerror' occurred until the trace ended. Our analysis shows that the total computational power lost is only 0.3386%, meaning these rare errors do not have a significant effect on the overall capacity of the system. Compared to the Google trace, which showed a total power loss of 1.8879%, Alibaba's much lower percentage of power lost suggests that its physical machines are less prone to the critical failures that permanently remove capacity from the cluster.
-
+Overall, the Alibaba trace highlights the cluster’s high efficiency and aggressive anti-locality scheduling, providing a stark contrast to Google’s more locality-aware approach to resource management.
 
 
 # Sources
